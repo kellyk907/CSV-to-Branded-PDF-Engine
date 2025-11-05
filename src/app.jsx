@@ -2,132 +2,86 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import './i18n';
 
-const SAMPLE_DATA = {
-  es: [
-    { en: "Hello", target: "Hola" },
-    { en: "Thank you", target: "Gracias" },
-    { en: "Water", target: "Agua" }
-  ],
-  zh: [
-    { en: "Hello", target: "你好" },
-    { en: "Thank you", target: "谢谢" },
-    { en: "Water", target: "水" }
-  ]
+const SAMPLE = {
+  es: [{ en: "Hello", target: "Hola" }, { en: "Water", target: "Agua" }],
+  zh: [{ en: "Hello", target: "你好" }, { en: "Water", target: "水" }]
 };
 
-function App() {
+export default function App() {
   const { t, i18n } = useTranslation();
-  const [flashcards, setFlashcards] = useState([]);
-  const [inputEn, setInputEn] = useState('');
-  const [inputTarget, setInputTarget] = useState('');
-  const [flipped, setFlipped] = useState({});
-  const currentLang = i18n.language === 'zh' ? 'zh' : 'es';
+  const [cards, setCards] = useState([]);
+  const [en, setEn] = useState('');
+  const [target, setTarget] = useState('');
+  const [flip, setFlip] = useState({});
+  const lang = i18n.language === 'zh' ? 'zh' : 'es';
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`flashcards_${currentLang}`);
-      setFlashcards(saved ? JSON.parse(saved) : SAMPLE_DATA[currentLang]);
-    } catch {
-      setFlashcards(SAMPLE_DATA[currentLang]);
-    }
-  }, [currentLang]);
+    const saved = localStorage.getItem(`cards_${lang}`);
+    setCards(saved ? JSON.parse(saved) : SAMPLE[lang]);
+  }, [lang]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(`flashcards_${currentLang}`, JSON.stringify(flashcards));
-    } catch {}
-  }, [flashcards, currentLang]);
+    localStorage.setItem(`cards_${lang}`, JSON.stringify(cards));
+  }, [cards, lang]);
 
-  const addCard = () => {
-    if (inputEn.trim() && inputTarget.trim()) {
-      setFlashcards([...flashcards, { en: inputEn, target: inputTarget }]);
-      setInputEn('');
-      setInputTarget('');
+  const add = () => {
+    if (en && target) {
+      setCards([...cards, { en, target }]);
+      setEn(''); setTarget('');
     }
   };
 
-  const deleteCard = (i) => setFlashcards(flashcards.filter((_, idx) => idx !== i));
-  const clearAll = () => setFlashcards([]);
-  const toggleFlip = (i) => setFlipped(prev => ({ ...prev, [i]: !prev[i] }));
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-indigo-700">{t('title')}</h1>
-          <p className="text-gray-600">{t('subtitle')}</p>
-        </div>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1 style={{ textAlign: 'center', color: '#4f46e5' }}>{t('title')}</h1>
 
-        <div className="flex justify-center mb-6">
-          <button
-            onClick={() => i18n.changeLanguage(i18n.language === 'zh' ? 'en' : 'zh')}
-            className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium"
-          >
-            {i18n.language === 'zh' ? 'Español' : '中文'}
-          </button>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <div className="grid md:grid-cols-2 gap-4 mb-4">
-            <input
-              value={inputEn}
-              onChange={(e) => setInputEn(e.target.value)}
-              placeholder="English"
-              className="p-3 border-2 rounded-xl"
-              onKeyPress={(e) => e.key === 'Enter' && addCard()}
-            />
-            <input
-              value={inputTarget}
-              onChange={(e) => setInputTarget(e.target.value)}
-              placeholder={currentLang === 'es' ? 'Español' : '中文'}
-              className="p-3 border-2 rounded-xl"
-              onKeyPress={(e) => e.key === 'Enter' && addCard()}
-            />
-          </div>
-          <button onClick={addCard} className="w-full py-3 bg-indigo-600 text-white rounded-xl">
-            {t('addCard')}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {flashcards.length === 0 ? (
-            <p className="col-span-full text-center text-gray-500">{t('noCards')}</p>
-          ) : (
-            flashcards.map((card, i) => (
-              <div
-                key={i}
-                className="relative h-48 cursor-pointer"
-                onClick={() => toggleFlip(i)}
-              >
-                <div className={`absolute inset-0 transition-transform duration-500 ${flipped[i] ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d' }}>
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-4 backface-hidden">
-                    <p className="text-xl font-bold">{card.en}</p>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 text-white rounded-2xl shadow-lg flex flex-col items-center justify-center p-4 rotate-y-180 backface-hidden">
-                    <p className="text-xl font-bold">{card.target}</p>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteCard(i); }}
-                      className="mt-2 px-3 py-1 bg-red-600 rounded text-sm"
-                    >
-                      {t('delete')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {flashcards.length > 0 && (
-          <div className="text-center mt-8">
-            <button onClick={clearAll} className="px-6 py-2 bg-gray-600 text-white rounded-xl">
-              {t('clearAll')}
-            </button>
-          </div>
-        )}
+      <div style={{ textAlign: 'center', margin: '20px' }}>
+        <button
+          onClick={() => i18n.changeLanguage(i18n.language === 'zh' ? 'en' : 'zh')}
+          style={{ padding: '10px 20px', background: '#7c3aed', color: 'white', border: 'none', borderRadius: '8px' }}
+        >
+          {i18n.language === 'zh' ? 'Español' : '中文'}
+        </button>
       </div>
+
+      <div style={{ display: 'grid', gap: '10px', marginBottom: '20px' }}>
+        <input value={en} onChange={e => setEn(e.target.value)} placeholder="English" style={{ padding: '12px', border: '2px solid #ddd', borderRadius: '8px' }} />
+        <input value={target} onChange={e => setTarget(e.target.value)} placeholder={lang === 'es' ? 'Español' : '中文'} style={{ padding: '12px', border: '2px solid #ddd', borderRadius: '8px' }} />
+        <button onClick={add} style={{ padding: '12px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px' }}>{t('addCard')}</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        {cards.map((c, i) => (
+          <div
+            key={i}
+            onClick={() => setFlip({ ...flip, [i]: !flip[i] })}
+            style={{ height: '180px', perspective: '1000px', cursor: 'pointer' }}
+          >
+            <div style={{ position: 'relative', width: '100%', height: '100%', transition: '0.6s', transformStyle: 'preserve-3d', transform: flip[i] ? 'rotateY(180deg)' : '' }}>
+              <div style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', background: 'linear-gradient(135deg, #3b82f6, #1e40af)', color: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                <p style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center' }}>{c.en}</p>
+              </div>
+              <div style={{ position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden', background: 'linear-gradient(135deg, #ec4899, #a21caf)', color: 'white', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px', transform: 'rotateY(180deg)' }}>
+                <p style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center' }}>{c.target}</p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCards(cards.filter((_, idx) => idx !== i)); }}
+                  style={{ marginTop: '8px', padding: '6px 12px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px' }}
+                >
+                  {t('delete')}
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {cards.length > 0 && (
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <button onClick={() => setCards([])} style={{ padding: '10px 20px', background: '#6b7280', color: 'white', border: 'none', borderRadius: '8px' }}>
+            {t('clearAll')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-
-export default App;
