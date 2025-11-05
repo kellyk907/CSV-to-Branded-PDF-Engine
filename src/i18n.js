@@ -10,8 +10,6 @@ i18n
           title: "Bilingual Flashcard Generator",
           subtitle: "English to Spanish or Chinese",
           addCard: "Add Card",
-          front: "Front",
-          back: "Back",
           delete: "Delete",
           noCards: "No cards yet. Add one!",
           clearAll: "Clear All"
@@ -22,10 +20,8 @@ i18n
           title: "Generador de Tarjetas Bilingües",
           subtitle: "Inglés to Español o Chino",
           addCard: "Añadir Tarjeta",
-          front: "Frente",
-          back: "Reverso",
           delete: "Borrar",
-          noCards: "Aún no hay tarjetas. ¡Añade una!",
+          noCards: "Aún no hay tarjetas",
           clearAll: "Borrar Todo"
         }
       },
@@ -34,17 +30,14 @@ i18n
           title: "双语闪卡生成器",
           subtitle: "英语 to 西班牙语或中文",
           addCard: "添加卡片",
-          front: "正面",
-          back: "背面",
           delete: "删除",
-          noCards: "还没有卡片。添加一张吧！",
+          noCards: "还没有卡片",
           clearAll: "清除全部"
         }
       }
     },
     lng: "en",
-    fallbackLng: "en",
-    interpolation: { escapeValue: false }
+    fallbackLng: "en"
   });
 
 export default i18n;
