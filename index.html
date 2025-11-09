@@ -21,8 +21,12 @@
     --shadow-lg: 0 10px 15px -3px rgba(
 </head>
 <body>
-  <h1>CSV → PDF Flashcard Generator</h1>
-
+  <div class="container">
+    <header>
+      <h1>CSV → PDF Flashcard Engine</h1>
+      <p>Upload once. Print 1,000+ cards in seconds.</p>
+    </header>
+    <main>
   <!-- CSV Uploader -->
   <div id="uploader" class="uploader">
     <p><strong>Drag & drop your CSV here</strong><br/>or</p>
@@ -158,5 +162,10 @@
 
   <!-- jsPDF for PDF generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+          </main>
+    <footer>
+      Built by Kelly Kroeper • <a href="https://portfoliov2-brown-seven.vercel.app" style="color:var(--primary);text-decoration:none;">View Portfolio →</a>
+    </footer>
+  </div>
 </body>
 </html>
