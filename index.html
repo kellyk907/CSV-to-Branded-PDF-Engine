@@ -198,7 +198,7 @@
   </div>
 <script>
   let data = [];
-  let logoUrl = null;
+  let logoFile = null; // Store file, not URL
 
   // Parse CSV
   function parseCSV(text) {
@@ -227,14 +227,17 @@
     }
   });
 
-  // Logo Upload — FIXED
+  // Logo Upload — Store file
   document.getElementById('logo').addEventListener('change', e => {
     const file = e.target.files[0];
     if (file) {
-      logoUrl = URL.createObjectURL(file); // Safe local URL
-      const preview = document.getElementById('logoPreview');
-      preview.src = logoUrl;
-      preview.style.display = 'block';
+      logoFile = file;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById('logoPreview').src = ev.target.result;
+        document.getElementById('logoPreview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
     }
   });
 
@@ -256,6 +259,125 @@
   });
 
   // Add Card
+  function addCard() {
+    const term = document.getElementById('term').value.trim();
+    const def = document.getElementById('definition').value.trim();
+    const lang = document.getElementById('language').value.trim() || 'en';
+    if (term && def) {
+      data.push({ term, definition: def, language: lang });
+      renderCards();
+      document.getElementById('term').value = '';
+      document.getElementById('definition').value = '';
+      document.getElementById('language').value = '';
+    }
+  }
 
+  // Render Cards (NO LOGO IN HTML)
+  function renderCards() {
+    const container = document.getElementById('flashcards');
+    container.innerHTML = '';
+    data.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `<h3>${item.term}</h3><p>${item.definition}</p><small>${item.language.toUpperCase()}</small>`;
+      container.appendChild(div);
+    });
+    document.getElementById('download').style.display = data.length > 0 ? 'block' : 'none';
+  }
+
+  // Auto-Translate
+  async function translateAll() {
+    const source = document.getElementById('sourceLang').value;
+    const target = document.getElementById('targetLang').value;
+    if (source === target) return alert('Select different languages!');
+    const btn = document.querySelector('.translate-section button');
+    btn.textContent = 'Translating...';
+    btn.disabled = true;
+    for (let item of data) {
+      try {
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${source}&tl=${target}&dt=t&q=${encodeURIComponent(item.definition)}`);
+        const json = await res.json();
+        if (json?.[0]?.[0]?.[0]) {
+          item.definition = json[0][0][0];
+          item.language = target;
+        }
+      } catch (e) {}
+    }
+    renderCards();
+    btn.textContent = 'Translate All';
+    btn.disabled = false;
+    alert('Translated!');
+  }
+
+  // Generate PDF — FINAL FIX
+  async function generatePDF() {
+    if (data.length === 0) return alert('Add data first!');
+    const btn = document.getElementById('download');
+    btn.textContent = 'Generating PDF...';
+    btn.disabled = true;
+
+    try {
+      const container = document.getElementById('flashcards');
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#1a1a2e'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 10;
+      const contentWidth = pageWidth - 2 * margin;
+      const contentHeight = pageHeight - 2 * margin;
+
+      // Add logo at top of first page
+      if (logoFile) {
+        const logoReader = new FileReader();
+        const logoData = await new Promise(resolve => {
+          logoReader.onload = () => resolve(logoReader.result);
+          logoReader.readAsDataURL(logoFile);
+        });
+        const logoWidth = 40;
+        const logoHeight = 20;
+        pdf.addImage(logoData, 'PNG', margin, margin, logoWidth, logoHeight);
+      }
+
+      const imgHeight = (canvas.height * contentWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = logoFile ? margin + 25 : margin;
+
+      pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight);
+      heightLeft -= contentHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight + margin;
+        pdf.addPage();
+        if (logoFile) {
+          const logoReader = new FileReader();
+          const logoData = await new Promise(resolve => {
+            logoReader.onload = () => resolve(logoReader.result);
+            logoReader.readAsDataURL(logoFile);
+          });
+          pdf.addImage(logoData, 'PNG', margin, margin, 40, 20);
+        }
+        pdf.addImage(imgData, 'PNG', margin, position, contentWidth, imgHeight);
+        heightLeft -= contentHeight;
+      }
+
+      pdf.save('branded-output.pdf');
+      alert('PDF downloaded!');
+    } catch (e) {
+      console.error(e);
+      alert('PDF failed. Try without logo.');
+    } finally {
+      btn.textContent = 'Download PDF';
+      btn.disabled = false;
+    }
+  }
+</script>
 </body>
 </html>
