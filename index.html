@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CSV to Branded PDF Engine</title>
   <link href="https://fonts.googleapis.com/css2?family=Satoshi:wght@500;700;900&display=swap" rel="stylesheet">
-  <link href="https://rsms.me/inter/inter/inter.css" rel="stylesheet">
+  <link href="https://rsms.me/inter/inter.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
@@ -24,10 +24,10 @@
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { font-family: var(--font-body); }
     body {
       background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
       color: var(--text);
+      font-family: var(--font-body);
       line-height: 1.7;
       min-height: 100vh;
       padding: 2rem 1rem;
@@ -201,7 +201,7 @@
     let data = [];
     let logoUrl = null;
 
-    // CSV Parse
+    // Parse CSV
     function parseCSV(text) {
       const rows = text.split('\n').slice(1).filter(r => r.trim());
       return rows.map(r => {
@@ -214,7 +214,7 @@
       }).filter(d => d.term && d.definition);
     }
 
-    // File uploads
+    // CSV Upload
     document.getElementById('csvFile').addEventListener('change', e => {
       const file = e.target.files[0];
       if (file) {
@@ -228,6 +228,7 @@
       }
     });
 
+    // Logo Upload
     document.getElementById('logo').addEventListener('change', e => {
       const file = e.target.files[0];
       if (file) {
@@ -237,19 +238,15 @@
           document.getElementById('logoPreview').src = logoUrl;
           document.getElementById('logoPreview').style.display = 'block';
         };
-        reader.readAsText(file);
+        reader.readAsDataURL(file);
       }
     });
 
     // Drag & Drop
     const uploader = document.getElementById('uploader');
-    uploader.addEventListener('dragover', e => {
-      e.preventDefault();
-      uploader.classList.add('dragover');
-    });
+    uploader.addEventListener('dragover', e => e.preventDefault());
     uploader.addEventListener('drop', e => {
       e.preventDefault();
-      uploader.classList.remove('dragover');
       const file = e.dataTransfer.files[0];
       if (file && file.name.endsWith('.csv')) {
         const reader = new FileReader();
@@ -262,7 +259,7 @@
       }
     });
 
-    // Add card
+    // Add Card
     function addCard() {
       const term = document.getElementById('term').value.trim();
       const def = document.getElementById('definition').value.trim();
@@ -276,7 +273,7 @@
       }
     }
 
-    // Render
+    // Render Cards
     function renderCards() {
       const container = document.getElementById('flashcards');
       container.innerHTML = '';
@@ -290,13 +287,11 @@
       document.getElementById('download').style.display = data.length > 0 ? 'block' : 'none';
     }
 
-    // Auto-Translate (Google API — Works in Browser)
+    // Auto-Translate
     async function translateAll() {
       const source = document.getElementById('sourceLang').value;
       const target = document.getElementById('targetLang').value;
       if (source === target) return alert('Select different languages!');
-      const btn = document.querySelector('button[onclick="translateAll()"]');
-      btn.textContent = 'Translating...';
       for (let item of data) {
         try {
           const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${source}&tl=${target}&dt=t&q=${encodeURIComponent(item.definition)}`);
@@ -304,15 +299,14 @@
           item.definition = json[0][0][0];
           item.language = target;
         } catch (e) {
-          // Fallback if API fails
+          // Skip errors
         }
       }
       renderCards();
-      btn.textContent = 'Translate All';
       alert('Translated!');
     }
 
-    // PDF (Fixed — Works 100%)
+    // Generate PDF
     async function generatePDF() {
       if (data.length === 0) return alert('Add data!');
       document.getElementById('download').textContent = 'Generating...';
